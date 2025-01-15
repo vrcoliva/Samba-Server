@@ -1,0 +1,240 @@
+Vou formatar o texto para que ele fique ainda mais claro e organizado para publicação no GitHub. Aqui está:
+
+```markdown
+# Instalação do Samba Server
+
+## 1. Instalação do Samba:
+```bash
+sudo apt update
+sudo apt install samba samba-common-bin
+sudo apt install acl
+```
+- **sudo apt update:** Atualiza a lista de pacotes disponíveis e suas versões.
+- **sudo apt install samba samba-common-bin:** Instala o Samba e os binários comuns do Samba.
+- **sudo apt install acl:** Instala o ACL (Access Control List), necessário para definir permissões mais detalhadas.
+
+## 2. Criar os Grupos:
+```bash
+sudo groupadd financeiro
+sudo groupadd engenharia
+sudo groupadd comercial
+sudo groupadd publico
+sudo groupadd tecnologia
+```
+- **sudo groupadd nome_do_grupo:** Cria novos grupos no sistema para organizar permissões de acesso.
+
+## 3. Criar os Usuários e Adicionar aos grupos:
+
+### Criar usuários:
+```bash
+sudo useradd -m -s /bin/bash usuario1
+sudo useradd -m -s /bin/bash usuario2
+sudo useradd -m -s /bin/bash usuario3
+```
+- **sudo useradd -m -s /bin/bash nome_do_usuario:** Cria novos usuários com um diretório home e define o shell padrão como /bin/bash.
+
+### Adicionar usuários aos grupos:
+```bash
+sudo usermod -aG financeiro usuario1
+sudo usermod -aG engenharia usuario2
+sudo usermod -aG tecnologia usuario3
+sudo usermod -aG comercial usuario1
+```
+- **sudo usermod -aG nome_do_grupo nome_do_usuario:** Adiciona os usuários aos grupos especificados.
+
+### Definir as senhas dos usuários:
+```bash
+sudo passwd usuario1
+sudo passwd usuario2
+sudo passwd usuario3
+```
+- **sudo passwd nome_do_usuario:** Define as senhas para os usuários recém-criados.
+
+## 4. Configurar Usuários no Samba:
+```bash
+sudo smbpasswd -a usuario1
+sudo smbpasswd -a usuario2
+sudo smbpasswd -a usuario3
+```
+- **sudo smbpasswd -a nome_do_usuario:** Adiciona os usuários ao banco de dados do Samba para que possam autenticar no servidor Samba.
+
+## 5. Criação dos Diretórios Compartilhados:
+
+### Diretórios:
+```bash
+sudo mkdir -p /srv/samba/Engenharia
+sudo mkdir -p /srv/samba/Financeiro
+sudo mkdir -p /srv/samba/Comercial
+sudo mkdir -p /srv/samba/Tecnologia
+sudo mkdir -p /srv/samba/Administrativo
+sudo mkdir -p /srv/samba/Publico
+```
+- **sudo mkdir -p caminho_do_diretório:** Cria os diretórios especificados, incluindo quaisquer diretórios pai necessários.
+
+### Permissões das pastas:
+```bash
+sudo chown :engenharia /srv/samba/Engenharia
+sudo chmod 770 /srv/samba/Engenharia
+
+sudo chown :financeiro /srv/samba/Financeiro
+sudo chmod 770 /srv/samba/Financeiro
+
+sudo chown :comercial /srv/samba/Comercial
+sudo chmod 770 /srv/samba/Comercial
+
+sudo chown :tecnologia /srv/samba/Tecnologia
+sudo chmod 770 /srv/samba/Tecnologia
+
+sudo chown :administrativo /srv/samba/Administrativo
+sudo chmod 770 /srv/samba/Administrativo
+
+sudo chown :publico /srv/samba/Publico
+sudo chmod 775 /srv/samba/Publico
+```
+- **sudo chown :nome_do_grupo caminho_do_diretório:** Define o grupo proprietário do diretório.
+- **sudo chmod permissões caminho_do_diretório:** Define as permissões do diretório (rwx para o proprietário e o grupo, e r-x para outros, se aplicável).
+
+### ACLs:
+```bash
+sudo setfacl -m g:comercial:rx /srv/samba/Engenharia
+```
+- **sudo setfacl -m g:nome_do_grupo:permissões caminho_do_diretório:** Define ACLs específicas para um grupo em um diretório.
+
+## 6. Configuração do Grupo adminsamba e Permissões:
+
+```bash
+sudo groupadd adminsamba
+sudo usermod -aG adminsamba root
+sudo usermod -aG adminsamba suporte
+sudo chown root:adminsamba /etc/samba/smb.conf
+sudo chmod 660 /etc/samba/smb.conf
+```
+- **sudo groupadd adminsamba:** Cria o grupo adminsamba.
+- **sudo usermod -aG adminsamba nome_do_usuário:** Adiciona usuários ao grupo adminsamba.
+- **sudo chown root:adminsamba caminho_do_arquivo:** Define o proprietário do arquivo e o grupo associado.
+- **sudo chmod 660 caminho_do_arquivo:** Define as permissões do arquivo para leitura e escrita pelo proprietário e pelo grupo.
+
+- **Minimização de Permissões:** Siga o princípio do menor privilégio, garantindo que apenas as permissões necessárias sejam concedidas.
+
+## 7. Backup do smb.conf:
+
+```bash
+sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.backup
+sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.backup.$(date +%F)
+```
+- **sudo cp caminho_do_arquivo destino_do_arquivo:** Faz um backup do arquivo smb.conf.
+
+## 8. Configuração do smb.conf:
+
+### Limpar Comentários e Linhas em Branco:
+```bash
+egrep -v "^#|^$" /etc/samba/smb.conf.backup > /etc/samba/smb.conf
+```
+- Remove comentários e linhas em branco do arquivo smb.conf.backup.
+
+### Exemplo de configuração do smb.conf:
+```ini
+[global]
+workgroup = WORKGROUP
+server string = Servidor Samba
+netbios name = svr-samba
+
+log file = /var/log/samba/log.%m
+max log size = 1000
+logging = file
+panic action = /usr/share/samba/panic-action %d
+server role = standalone server
+obey pam restrictions = yes
+unix password sync = yes
+passwd program = /usr/bin/passwd %u
+passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+pam password change = yes
+usershare allow guests = no
+
+vfs objects = full_audit
+full_audit:prefix = %u|%I|%m|%S
+full_audit:success = open write unlinkat
+full_audit:failure = connect
+full_audit:facility = LOCAL7
+full_audit:priority = NOTICE
+
+server min protocol = SMB2
+client min protocol = SMB2
+ntlm auth = no
+
+[Engenharia]
+path = /srv/samba/Engenharia
+valid users = @financeiro, @engenharia, @suporte, @comercial
+read list = @comercial
+write list = @financeiro, @engenharia, @suporte
+read only = no
+force group = engenharia
+browseable = yes
+
+[Financeiro]
+path = /srv/samba/Financeiro
+valid users = @financeiro, @suporte
+read only = no
+force group = financeiro
+browseable = yes
+
+[Comercial]
+path = /srv/samba/Comercial
+valid users = @financeiro, @engenharia, @comercial, @suporte
+read only = no
+force group = comercial
+browseable = yes
+
+[Publico]
+path = /srv/samba/Publico
+valid users = @publico
+read only = no
+force group = publico
+browseable = yes
+
+[Administrativo]
+path = /srv/samba/Administrativo
+valid users = @administrativo
+read only = no
+force group = administrativo
+browseable = yes
+
+[Tecnologia]
+path = /srv/samba/Tecnologia
+valid users = @tecnologia
+read only = no
+force group = tecnologia
+browseable = yes
+veto files = /*.exe/*.com/*.bat/*.scr/
+```
+
+## 9. Verificação com testparm:
+```bash
+testparm
+```
+- **testparm:** Verifica a sintaxe do arquivo de configuração smb.conf para garantir que não há erros.
+
+### Exemplo de Saída:
+```plaintext
+Load smb config files from /etc/samba/smb.conf
+Processing section "[global]"
+Processing section "[Engenharia]"
+Processing section "[Financeiro]"
+Processing section "[Comercial]"
+Processing section "[Público]"
+Processing section "[Administrativo]"
+Processing section "[Tecnologia]"
+Loaded services file OK.
+Server role: ROLE_STANDALONE
+```
+
+## 10. Reiniciar o Samba:
+```bash
+sudo systemctl restart smbd nmbd
+```
+Após fazer alterações no arquivo de configuração ou nas permissões das pastas, não se esqueça de reiniciar o serviço Samba.
+```
+
+---
+
+Agora o texto está pronto para ser publicado no GitHub com uma formatação clara e organizada em Markdown. Dessa forma, os novos usuários terão um guia passo a passo para a instalação e configuração do Samba Server.
